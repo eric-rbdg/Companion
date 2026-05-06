@@ -107,6 +107,27 @@ resource "aws_db_instance" "postgres" {
   backup_retention_period = 3
 }
 
+# --- Deploy bucket (for GitHub Actions bundles) ---
+
+resource "aws_s3_bucket" "eb_deploy" {
+  bucket = "${local.name_prefix}-eb-deploy"
+}
+
+resource "aws_s3_bucket_public_access_block" "eb_deploy" {
+  bucket                  = aws_s3_bucket.eb_deploy.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_versioning" "eb_deploy" {
+  bucket = aws_s3_bucket.eb_deploy.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
 # --- Elastic Beanstalk (Docker single container) ---
 
 resource "aws_elastic_beanstalk_application" "app" {
