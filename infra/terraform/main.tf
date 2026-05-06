@@ -107,6 +107,19 @@ resource "aws_db_instance" "postgres" {
   backup_retention_period = 3
 }
 
+# --- KMS key (encrypt/decrypt phoneNumberEnc) ---
+
+resource "aws_kms_key" "app" {
+  description             = "Apricity - encrypt phone numbers for scheduled check-ins"
+  deletion_window_in_days = 7
+  enable_key_rotation     = true
+}
+
+resource "aws_kms_alias" "app" {
+  name          = "alias/${local.name_prefix}-app"
+  target_key_id = aws_kms_key.app.key_id
+}
+
 # --- Deploy bucket (for GitHub Actions bundles) ---
 
 resource "aws_s3_bucket" "eb_deploy" {
@@ -190,6 +203,28 @@ resource "aws_iam_role_policy_attachment" "eb_worker_tier" {
 resource "aws_iam_role_policy_attachment" "eb_multicontainer" {
   role       = aws_iam_role.eb_ec2_role.name
   policy_arn = "arn:aws:iam::aws:policy/AWSElasticBeanstalkMulticontainerDocker"
+}
+
+data "aws_iam_policy_document" "kms_for_eb" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "kms:Encrypt",
+      "kms:Decrypt",
+      "kms:DescribeKey",
+    ]
+    resources = [aws_kms_key.app.arn]
+  }
+}
+
+resource "aws_iam_policy" "kms_for_eb" {
+  name   = "${local.name_prefix}-kms-for-eb"
+  policy = data.aws_iam_policy_document.kms_for_eb.json
+}
+
+resource "aws_iam_role_policy_attachment" "eb_kms" {
+  role       = aws_iam_role.eb_ec2_role.name
+  policy_arn = aws_iam_policy.kms_for_eb.arn
 }
 
 resource "aws_iam_instance_profile" "eb_instance_profile" {
@@ -297,6 +332,18 @@ resource "aws_elastic_beanstalk_environment" "env" {
     namespace = "aws:elasticbeanstalk:application:environment"
     name      = "LOG_LEVEL"
     value     = "info"
+  }
+
+  # Crypto config (required for scheduled/proactive check-ins)
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
+    name      = "AWS_REGION"
+    value     = var.aws_region
+  }
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
+    name      = "KMS_KEY_ID"
+    value     = aws_kms_key.app.key_id
   }
 }
 

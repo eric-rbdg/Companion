@@ -28,3 +28,13 @@ output "eb_deploy_bucket" {
   description = "S3 bucket for GitHub Actions deployment bundles"
 }
 
+output "kms_key_id" {
+  value       = aws_kms_key.app.key_id
+  description = "KMS key id used for phoneNumberEnc encryption"
+}
+
+output "kms_key_arn" {
+  value       = aws_kms_key.app.arn
+  description = "KMS key arn used for phoneNumberEnc encryption"
+}
+
