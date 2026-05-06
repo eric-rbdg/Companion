@@ -1,0 +1,77 @@
+name: Deploy to Elastic Beanstalk
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-beanstalk
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Create application bundle zip
+        run: |
+          set -euo pipefail
+          rm -f apricity-eb.zip
+          zip -r apricity-eb.zip \
+            Dockerfile \
+            package.json \
+            package-lock.json \
+            tsconfig.json \
+            src \
+            prisma \
+            infra/terraform/README.md \
+            README.md \
+            .env.example
+
+      - name: Upload bundle to S3
+        env:
+          EB_DEPLOY_BUCKET: ${{ secrets.EB_DEPLOY_BUCKET }}
+        run: |
+          set -euo pipefail
+          KEY="apricity/${GITHUB_REPOSITORY}/${GITHUB_SHA}.zip"
+          aws s3 cp "apricity-eb.zip" "s3://${EB_DEPLOY_BUCKET}/${KEY}"
+          echo "S3_KEY=${KEY}" >> "$GITHUB_ENV"
+
+      - name: Create EB application version
+        env:
+          EB_APP_NAME: ${{ secrets.EB_APP_NAME }}
+          EB_DEPLOY_BUCKET: ${{ secrets.EB_DEPLOY_BUCKET }}
+          EB_VERSION_LABEL: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          aws elasticbeanstalk create-application-version \
+            --application-name "${EB_APP_NAME}" \
+            --version-label "${EB_VERSION_LABEL}" \
+            --source-bundle S3Bucket="${EB_DEPLOY_BUCKET}",S3Key="${S3_KEY}" \
+            --auto-create-application \
+            --process
+
+      - name: Deploy version to environment
+        env:
+          EB_ENV_NAME: ${{ secrets.EB_ENV_NAME }}
+          EB_VERSION_LABEL: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          aws elasticbeanstalk update-environment \
+            --environment-name "${EB_ENV_NAME}" \
+            --version-label "${EB_VERSION_LABEL}"
+

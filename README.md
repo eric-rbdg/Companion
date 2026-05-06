@@ -115,6 +115,23 @@ For local testing, expose port 3000 with **ngrok**, **Cloudflare Tunnel**, or si
 | `npm start` | Run compiled app |
 | `npm run db:migrate` | `prisma migrate deploy` |
 | `npm run db:migrate:dev` | Create/apply dev migrations |
+| `npm run admin:stats` | Fetch and print `/admin/stats` |
+
+## Deploy (GitHub Actions → Elastic Beanstalk)
+
+This repo includes a workflow that deploys on pushes to `main`.
+
+### Required GitHub Secrets
+
+Set these in GitHub → Settings → Secrets and variables → Actions:
+
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_REGION` (e.g. `us-east-1`)
+- `EB_DEPLOY_BUCKET` (an S3 bucket name for bundles)
+- `EB_APP_NAME` (Elastic Beanstalk application name)
+- `EB_ENV_NAME` (Elastic Beanstalk environment name)
+
 
 ## License
 
