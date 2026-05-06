@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+}
+
+enum EventType {
+  PAGE_VIEW
+}
+
+model User {
+  id                  String    @id @default(uuid())
+  phoneNumber         String    @unique
+  phoneNumberEnc      String?
+  phoneNumberEncKeyId String?
+  createdAt           DateTime  @default(now())
+  isOptedOut          Boolean   @default(false)
+  messages            Message[]
+  consents            Consent[]
+  events              Event[]
+}
+
+model Message {
+  id        String      @id @default(uuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      MessageRole
+  content   String
+  createdAt DateTime    @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model Consent {
+  id                String   @id @default(uuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt         DateTime @default(now())
+  source            String
+  ip                String?
+  userAgent         String?
+  disclosureVersion String
+
+  @@index([userId, createdAt])
+}
+
+model Event {
+  id        String    @id @default(uuid())
+  type      EventType
+  path      String
+  createdAt DateTime  @default(now())
+  userId    String?
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([type, createdAt])
+  @@index([path, createdAt])
+}
