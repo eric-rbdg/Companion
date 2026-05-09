@@ -101,10 +101,25 @@ resource "aws_db_instance" "postgres" {
   publicly_accessible    = false
   vpc_security_group_ids = [aws_security_group.rds.id]
   db_subnet_group_name   = aws_db_subnet_group.default.name
-  skip_final_snapshot    = true
-  deletion_protection    = false
 
-  backup_retention_period = 3
+  backup_retention_period = var.rds_backup_retention_period
+  backup_window           = var.rds_backup_window
+  maintenance_window      = var.rds_maintenance_window
+  copy_tags_to_snapshot   = var.rds_copy_tags_to_snapshot
+
+  deletion_protection = var.rds_deletion_protection
+  skip_final_snapshot = var.rds_skip_final_snapshot
+  final_snapshot_identifier = var.rds_skip_final_snapshot ? null : (
+    trimspace(var.rds_final_snapshot_identifier) != ""
+    ? trimspace(var.rds_final_snapshot_identifier)
+    : "${local.name_prefix}-pg-final"
+  )
+
+  tags = {
+    Project     = var.project_name
+    ManagedBy   = "terraform"
+    Environment = "production"
+  }
 }
 
 # --- KMS key (encrypt/decrypt phoneNumberEnc) ---

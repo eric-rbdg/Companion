@@ -23,6 +23,21 @@ output "rds_port" {
   description = "RDS port"
 }
 
+output "rds_identifier" {
+  value       = aws_db_instance.postgres.identifier
+  description = "RDS DB instance identifier (use with CLI/console snapshots)"
+}
+
+output "rds_backup_retention_period" {
+  value       = aws_db_instance.postgres.backup_retention_period
+  description = "Automated backup retention (days)"
+}
+
+output "rds_latest_restorable_time" {
+  value       = aws_db_instance.postgres.latest_restorable_time
+  description = "Latest UTC time to which PITR can restore (after backups have run)"
+}
+
 output "eb_deploy_bucket" {
   value       = aws_s3_bucket.eb_deploy.bucket
   description = "S3 bucket for GitHub Actions deployment bundles"

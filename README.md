@@ -132,6 +132,28 @@ Set these in GitHub → Settings → Secrets and variables → Actions:
 - `EB_APP_NAME` (Elastic Beanstalk application name)
 - `EB_ENV_NAME` (Elastic Beanstalk environment name)
 
+## RDS backups (Terraform Postgres)
+
+Provisioned RDS uses **automated backups**:
+
+- Retention defaults to **7 days** (`rds_backup_retention_period` in `infra/terraform/variables.tf`). Increase up to **35** for stricter recovery objectives.
+- **Backup window** and **maintenance window** are set in **UTC** (`rds_backup_window`, `rds_maintenance_window`) so applies don't rely on AWS-assigned random slots.
+
+Optional safeguards:
+
+- `rds_deletion_protection = true` stops accidental deletes once you have real traffic (Terraform unset/delete protection changes apply normally).
+- `rds_skip_final_snapshot = false` plus optional `rds_final_snapshot_identifier` tells RDS to write a **final snapshot** when the instance is destroyed (recommended before tearing down meaningful data).
+
+**Manual snapshot:** RDS console → your instance → **Take snapshot** (good before risky migrations).
+
+**Restore:** Console → **Snapshots** or **Automated backups** → restore to a **new** instance (same VPC/security posture), then point Beanstalk `DATABASE_URL` at the new endpoint—or use **point-in-time recovery** from automated backups.
+
+```bash
+terraform -chdir=infra/terraform output rds_identifier
+terraform -chdir=infra/terraform output rds_latest_restorable_time
+```
+
+**Local docker-compose Postgres:** `docker compose exec postgres pg_dump -U iris iris_sms > backup.sql` (restore with `psql` into an empty database).
 
 ## License
 

@@ -6,6 +6,40 @@ This Terraform creates:
 
 You will still deploy the app code separately (zip upload / EB CLI / console). This keeps Terraform focused on infra.
 
+## Remote state (recommended)
+
+**Today:** If you have been applying from this folder without extra setup, state lives in **`terraform.tfstate`** next to these `.tf` files (gitignored).
+
+**Target:** State in **S3** with **DynamoDB locking**, configured inline in **`versions.tf`** (`backend "s3"` block). No separate `backend.hcl` file—fine for a single AWS account / solo workflow.
+
+### One-time bootstrap
+
+From `infra/terraform/bootstrap`:
+
+```bash
+terraform init
+terraform apply
+```
+
+Then edit **`versions.tf`**: replace `YOUR_ACCOUNT_ID` in the `bucket` name with your numeric account id (must match bootstrap naming: `apricity-tf-state-<id>` unless you changed `project_name` in bootstrap).
+
+### Migrate existing local state
+
+From **`infra/terraform`**:
+
+```bash
+terraform init -migrate-state
+```
+
+Confirm when prompted so the current `terraform.tfstate` is copied into S3. Afterward verify **`terraform plan`** is clean before removing local `.tfstate` files.
+
+### Validate without talking to S3 (syntax checks)
+
+```bash
+terraform init -backend=false
+terraform validate
+```
+
 ## Prereqs
 
 - AWS CLI authenticated (`aws sts get-caller-identity`)
@@ -13,7 +47,7 @@ You will still deploy the app code separately (zip upload / EB CLI / console). T
 
 ## Quick start
 
-From `infra/terraform`:
+From `infra/terraform` (after bootstrap + replacing `YOUR_ACCOUNT_ID` in `versions.tf`):
 
 ```bash
 terraform init

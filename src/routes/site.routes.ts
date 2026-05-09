@@ -246,12 +246,30 @@ function page(title: string, body: string): string {
       .hero-cta {
         margin-top: 22px;
       }
+      /* Home: equal vertical rhythm between pills, primary button, and helper text */
+      .home-cta-group {
+        margin-top: 18px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 24px;
+      }
+      .home-cta-group .row {
+        margin-top: 0;
+      }
+      .home-cta-group .hero-cta {
+        margin-top: 0;
+      }
+      .home-cta-group > .muted {
+        margin: 0;
+      }
       .hero-cta a.btn-primary {
         display: inline-block;
         width: auto;
         text-align: center;
         border-bottom: none;
         padding-inline: 28px;
+        margin-top: 0;
       }
       .success-banner {
         display: flex;
@@ -340,15 +358,17 @@ export function createSiteRouter(deps: SiteRouterDeps): Router {
         "Home",
         `<h1>Chat with Iris</h1>
         <p class="lead">A warm SMS companion from ${BRAND}. Short, thoughtful replies—no app required.</p>
-        <div class="row">
-          <span class="pill">US only</span>
-          <span class="pill">Reply STOP to opt out</span>
-          <span class="pill">Msg &amp; data rates may apply</span>
-        </div>
-        <div class="hero-cta">
-          <a class="btn-primary" href="/opt-in">Opt in for SMS</a>
-        </div>
-        <p class="muted">Already opted in? Reply from the same number you get texts on—we’ll pick up the thread.</p>`,
+        <div class="home-cta-group">
+          <div class="row">
+            <span class="pill">US only</span>
+            <span class="pill">Reply STOP to opt out</span>
+            <span class="pill">Msg &amp; data rates may apply</span>
+          </div>
+          <div class="hero-cta">
+            <a class="btn-primary" href="/opt-in">Opt in for SMS</a>
+          </div>
+          <p class="muted">Already opted in? Reply from the same number you get texts on—we’ll pick up the thread.</p>
+        </div>`,
       ),
     );
   });
